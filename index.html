@@ -30,63 +30,83 @@
   .stat-val.green { color: #1D9E75; }
   .progress-bg { height: 4px; background: #d3d1c7; border-radius: 2px; }
   .progress-fill { height: 4px; background: #1D9E75; border-radius: 2px; transition: width 0.3s; }
+  .reset-btn { margin-top: 12px; font-size: 11px; color: #aaa; background: none; border: none; cursor: pointer; text-decoration: underline; }
+  .reset-btn:hover { color: #888; }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>경력기술서 로우데이터 수집 플랜_260418~ WRITTEN BY RIMI</h1>
-  <p class="subtitle">카드 클릭하면 완료 처리돼요</p>
+  <p class="subtitle">카드 클릭하면 완료 처리돼요 · 새로고침해도 유지돼요</p>
   <div class="grid" id="card-grid"></div>
   <div class="stats">
     <div class="stats-row">
       <div>
         <div class="stat-label">완료</div>
-        <div class="stat-val green" id="count-done">1</div>
+        <div class="stat-val green" id="count-done">0</div>
       </div>
       <div>
         <div class="stat-label">남은 것</div>
-        <div class="stat-val" id="count-todo">10</div>
+        <div class="stat-val" id="count-todo">11</div>
       </div>
       <div>
         <div class="stat-label">진행률</div>
-        <div class="stat-val" id="count-pct">9%</div>
+        <div class="stat-val" id="count-pct">0%</div>
       </div>
     </div>
     <div class="progress-bg">
-      <div class="progress-fill" id="progress-bar" style="width: 9%;"></div>
+      <div class="progress-fill" id="progress-bar" style="width: 0%;"></div>
     </div>
+    <button class="reset-btn" onclick="resetAll()">전체 초기화</button>
   </div>
 </div>
 
 <script>
+const STORAGE_KEY = 'rawdata-plan-done';
+
 const items = [
-  { day: '완료', title: '브랜드 콘텐츠 제작', sub: 'SEO 로우데이터', done: true },
-  { day: '1일차', title: '브랜드 콘텐츠 제작', sub: '기획 블로그', done: false },
-  { day: '2일차', title: '검색광고 / 카피라이팅', sub: '파워링크 문구', done: false },
-  { day: '3일차', title: '위키 / 칼럼 콘텐츠', sub: '나무위키 & 브런치', done: false },
-  { day: '4일차', title: '글로벌 PR', sub: '해외 기사 배포', done: false },
-  { day: '5일차', title: '체험단 운영', sub: '가이드라인 & 섭외', done: false },
-  { day: '6일차', title: '파워콘텐츠', sub: '이미지 기획 정리', done: false },
-  { day: '7일차', title: '비주얼 콘텐츠', sub: '카드뉴스 이미지', done: false },
-  { day: '8일차', title: '브랜드 카피라이팅', sub: '다채널 문구 작성', done: false },
-  { day: '9일차', title: '자격 / 인증', sub: '검색광고마케터 1급', done: false },
-  { day: '10일차', title: '동영상', sub: '네이버 클립 숏폼', done: false },
+  { day: '완료', title: '브랜드 콘텐츠 제작', sub: 'SEO 로우데이터' },
+  { day: '1일차', title: '브랜드 콘텐츠 제작', sub: '기획 블로그' },
+  { day: '2일차', title: '검색광고 / 카피라이팅', sub: '파워링크 문구' },
+  { day: '3일차', title: '위키 / 칼럼 콘텐츠', sub: '나무위키 & 브런치' },
+  { day: '4일차', title: '글로벌 PR', sub: '해외 기사 배포' },
+  { day: '5일차', title: '체험단 운영', sub: '가이드라인 & 섭외' },
+  { day: '6일차', title: '파워콘텐츠', sub: '이미지 기획 정리' },
+  { day: '7일차', title: '비주얼 콘텐츠', sub: '카드뉴스 이미지' },
+  { day: '8일차', title: '브랜드 카피라이팅', sub: '다채널 문구 작성' },
+  { day: '9일차', title: '자격 / 인증', sub: '검색광고마케터 1급' },
+  { day: '10일차', title: '동영상', sub: '네이버 클립 숏폼' },
 ];
+
+function loadDone() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  } catch { return {}; }
+}
+
+function saveDone(doneMap) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(doneMap));
+}
+
+let doneMap = loadDone();
 
 const grid = document.getElementById('card-grid');
 
 function render() {
   grid.innerHTML = '';
   items.forEach((item, i) => {
+    const isDone = !!doneMap[i];
     const card = document.createElement('div');
-    card.className = 'card' + (item.done ? ' done' : '');
+    card.className = 'card' + (isDone ? ' done' : '');
     card.innerHTML = `
-      <div><span class="badge ${item.done ? 'badge-done' : 'badge-todo'}">${item.done ? '완료' : item.day}</span></div>
+      <div><span class="badge ${isDone ? 'badge-done' : 'badge-todo'}">${isDone ? '완료' : item.day}</span></div>
       <div class="item-title">${item.title}</div>
       <div class="item-sub">${item.sub}</div>
     `;
     card.addEventListener('click', () => {
-      items[i].done = !items[i].done;
+      doneMap[i] = !doneMap[i];
+      if (!doneMap[i]) delete doneMap[i];
+      saveDone(doneMap);
       updateStats();
       render();
     });
@@ -96,7 +116,7 @@ function render() {
 
 function updateStats() {
   const total = items.length;
-  const done = items.filter(i => i.done).length;
+  const done = Object.keys(doneMap).filter(k => doneMap[k]).length;
   const todo = total - done;
   const pct = Math.round((done / total) * 100);
   document.getElementById('count-done').textContent = done;
@@ -105,8 +125,17 @@ function updateStats() {
   document.getElementById('progress-bar').style.width = pct + '%';
 }
 
+function resetAll() {
+  if (confirm('전체 초기화할까요?')) {
+    doneMap = {};
+    saveDone(doneMap);
+    updateStats();
+    render();
+  }
+}
+
 render();
+updateStats();
 </script>
 </body>
 </html>
-
